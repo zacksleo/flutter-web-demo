@@ -25,3 +25,4 @@ yarn-error.log*
 # FVM Version Cache
 .fvm/
 .dart_tool/
+web
