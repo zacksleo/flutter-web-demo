@@ -1,70 +1,247 @@
-# Getting Started with Create React App
+# FlutterWeb实战：03-与流行前端框架集成
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+本项目是《FlutterWeb实战》的一部分
 
-## Available Scripts
+> 前端有非常多的框架、工具、库，这些都要比 Dart Web 成熟、丰富。所以在将 Fluttter 编译成 Web 以后，若能使用现有的前端技术实现 web 端的特殊需求，肯定事半功倍。
 
-In the project directory, you can run:
+## 搭建框架
 
-### `npm start`
+在开始之前，确保你已经安装好了 node 和 npm
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+### 使用 create-react-app 初始化项目
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+首先使用 create-react-app 创建一个前端项目
 
-### `npm test`
+```bash
+npx create-react-app flutter_web
+```
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+这些创建以下文件
 
-### `npm run build`
+```bash
+  .eslintrc.js
+  build/
+  node_modules/
+  package.json
+  public/
+  src/
+  yarn.lock
+```
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+这是一个标准的前端项目，不过不用担心，我们不会使用任何 react 技术。
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+## 项目配置
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+为了能自定义 webpack 打包配置，需要安装一个名为 `react-app-rewired` 的插件，以替换 `react-scripts` 脚本
 
-### `npm run eject`
+### 使用 react-app-wired 替换
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+安装 react-app-wired
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+```bash
+npm install -g react-app-rewired
+```
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+在根目录创建 `config-overrides.js` 文件，增加以下内容
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+```js
+const HtmlWebpackPlugin = require('html-webpack-plugin');
 
-## Learn More
+module.exports = function override(config, env) {
+  // Remove the default HtmlWebpackPlugin
+  config.plugins = config.plugins.filter(
+    (plugin) => !(plugin instanceof HtmlWebpackPlugin)
+  );
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+  // Add your own HtmlWebpackPlugin instance with your own options
+  config.plugins.push(
+    new HtmlWebpackPlugin({
+      template: 'public/index.html',
+      minify: {
+        removeComments: false,
+        collapseWhitespace: false,
+        removeRedundantAttributes: true,
+        useShortDoctype: true,
+        removeEmptyAttributes: true,
+        removeStyleLinkTypeAttributes: true,
+        keepClosingSlash: true,
+        minifyJS: false,
+        minifyCSS: true,
+        minifyURLs: true,
+      },
+    })
+  );
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+  return config;
+};
+```
 
-### Code Splitting
+这里面引入一个名为 `html-webpack-plugin` 的插件，配置了需要压缩的内容。
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
 
-### Analyzing the Bundle Size
+替换 package.json 中 scripts 部分
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+```diff
+  "scripts": {
+-   "start": "react-scripts start",
++   "start": "react-app-rewired start",
+-   "build": "react-scripts build",
++   "build": "react-app-rewired build",
+-   "test": "react-scripts test",
++   "test": "react-app-rewired test",
+    "eject": "react-scripts eject"
+}
+```
 
-### Making a Progressive Web App
+## 初始化 Flutter
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+在当前项目目录下，执行以下命令初始化 Flutter 项目
 
-### Advanced Configuration
+```bash
+flutter create --platforms web .
+```
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
+这将创建一个 Flutter 项目，并添加了 web 平台支持。
 
-### Deployment
+以下目录由 flutter 创建
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
+```
+Recreating project ....
+  pubspec.yaml (created)
+  lib/main.dart (created)
+  web/
+  analysis_options.yaml (created)
+```
 
-### `npm run build` fails to minify
+## 集成
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+现在，虽然两个项目共用一个目录，但我们需要修改一些配置，才将 flutter 项目与前端项目集成在一起工作。
+
+
+编辑 package.json 文件中`scripts/build` 处的内容，改为
+
+"rm -rf build && rm -rf web && react-app-rewired build && mv build web"，
+
+同时删除不需要的依赖, 增加 `react-app-rewired` 依赖
+
+```diff
+  "dependencies": {
+-    "cra-template": "1.2.0",
+-    "react": "^19.0.0",
+-    "react-dom": "^19.0.0",
+      "react-scripts": "5.0.1"
+  },
+  "eslintConfig": {
+    "extends": [
+-      "react-app",
+-      "react-app/jest"
+    ]
+  },
++ "devDependencies": {
++   "react-app-rewired": "^2.2.1"
++  }
+```
+
+运行 `npm install` 或 `yarn install`, 更新依赖。
+
+这行命令的作用是，构建时先清理当前项目目录 build 和 web 目录，构建完成后将前端构建目录改名为 web，以提供给 flutter 进一步构建使用。
+
+最终，经过一番折腾， `package.json` 文件中的内容如下面所示
+
+```json
+{
+  "name": "flutter_web",
+  "version": "0.1.0",
+  "private": true,
+  "dependencies": {
+    "react-scripts": "5.0.1"
+  },
+  "scripts": {
+    "start": "react-app-rewired start",
+    "build": "rm -rf build && rm -rf web && react-app-rewired build && mv build web",
+    "test": "react-app-rewired test",
+    "eject": "react-app-rewired eject"
+  },
+  "eslintConfig": {
+    "extends": [
+    ]
+  },
+    ...
+  "devDependencies": {
+    "react-app-rewired": "^2.2.1"
+  }
+}
+```
+
+接下来我们复制 web 目录并替换掉 public 目录。
+
+```bash
+rm -rf public
+cp -r web public
+```
+
+运行 `npm run build`, 如果能成功生成 web 目录，代表集成成功
+
+## 前端开发
+
+前面的准备工作完成以后，就可以愉快的开发了！
+
+进入 src 目录，这里面就可以编写我们的前端代码了，也可以使用 npm 的任何 js 库。
+
+为了统一维护 js，我们把 flutter web 的初始化代码从 html 中移到这里。
+
+首先清空 src 目录中的文件，然后新建一个 `index.js`, 添加以下内容
+
+```js
+window.flutterWebRenderer = "html";
+window.addEventListener('load', function(ev) {
+  // Download main.dart.js
+  _flutter.loader.loadEntrypoint({
+    entrypointUrl: 'main.dart.js',
+    serviceWorker: {
+      serviceWorkerVersion: serviceWorkerVersion,
+    }
+  }).then(function(engineInitializer) {
+    return engineInitializer.initializeEngine();
+  }).then(function(appRunner) {
+    return appRunner.runApp();
+  });
+});
+```
+
+## 项目构建
+
+```bash
+# 构建前端
+npm run build
+# 构建Flutter
+flutter clean && flutter build web --build-number=$VERSION_CODE --build-name=$TAG --web-renderer html --profile --base-href /webapp/
+```
+
+上述命令中， 和  都是环境变量，需要提前设置好
+
+```bash
+export VERSION_CODE=1
+export TAG=1.0.0
+```
+
+这里需要注意的是，如果你不希望通过子目录访问 Flutter web 应用，那么需要将 `base-href` 设置为 `/`，或者移除该选项
+
+```bash
+flutter clean && flutter build web --build-number=$VERSION_CODE --build-name=$TAG --web-renderer html --profile
+```
+
+
+## 公众号
+
+> HarmonyOS Flutter 开发
+
+<img src="./qrcode.png" width="300">
+
+`关注公众号，加入交流群。`
+
+## 参考资料
+
+- [Create React App](https://github.com/facebook/create-react-app)
+- [React App Wired](https://github.com/timarney/react-app-rewired/blob/master/README_zh.md)
+- [编写你的第一个 Flutter 网页应用](https://docs.flutter.cn/get-started/codelab-web/)
